@@ -1,0 +1,63 @@
+name: Deploy AWS RDS Instance
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    name: Deploy RDS to AWS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.4 # Specify the Terraform version you are using
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan
+        env:
+            TF_VAR_db_username: ${{ secrets.DATABASE_USERNAME }}
+            TF_VAR_db_password: ${{ secrets.DATABASE_PASSWORD }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+            TF_VAR_db_username: ${{ secrets.DATABASE_USERNAME }}
+            TF_VAR_db_password: ${{ secrets.DATABASE_PASSWORD }}
+
+      - name: Create Manifests Directory
+        run: mkdir -p terraform
+      
+      - name: Save Terraform Output
+        run: terraform output -json > terraform/terraform-output.json
+
+      - name: Upload Terraform Output as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-output
+          path: terraform/terraform-output.json
+      
+      - name: Commit and Push Terraform Output
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git config pull.rebase true
+          git pull
+          git add terraform/terraform-output.json
+          git commit -m "Update Terraform output" --allow-empty
+          git push
