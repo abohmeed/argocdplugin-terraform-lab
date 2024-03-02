@@ -1,0 +1,7 @@
+{
+  "db_instance_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "mydemo-mysql-db.cncci8vfwkmj.eu-west-1.rds.amazonaws.com:3306"
+  }
+}
