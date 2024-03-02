@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mysql-demo-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysql-client
+        image: mysql
+        command: 
+        - mysql
+        args: 
+        - -h$(MYSQL_HOST)
+        - -u$(MYSQL_USER)
+        - -p$(MYSQL_PASSWORD)
+        - -e
+        - |
+          CREATE DATABASE IF NOT EXISTS demo_db; 
+          USE demo_db; CREATE TABLE IF NOT EXISTS demo_table 
+          (id INT AUTO_INCREMENT, demo_column VARCHAR(255) NOT NULL, 
+          PRIMARY KEY (id)); INSERT INTO demo_table (demo_column) VALUES ('Demo data');
+        env:
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: terraform
+              key: mysqlHost
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-creds
+              key: username
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-creds
+              key: password
+      restartPolicy: Never
+  backoffLimit: 4

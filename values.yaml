@@ -1,0 +1,25 @@
+repoServer:
+  extraContainers:
+  - name: my-plugin-terraform
+    command:
+    - "/var/run/argocd/argocd-cmp-server"
+    image: afakharany/argocd-terraform-plugin:1.0
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+    volumeMounts:
+    - mountPath: /var/run/argocd
+      name: var-files
+    - mountPath: /home/argocd/cmp-server/plugins
+      name: plugins
+    - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+      subPath: plugin.yaml
+      name: plugin-cm
+    - mountPath: /tmp
+      name: cmp-tmp
+  volumes:
+  - name: cmp-tmp
+    emptyDir: {}
+  - name: plugin-cm
+    configMap:
+      name: terraform-plugin-config
